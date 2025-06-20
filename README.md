@@ -96,3 +96,202 @@ h2. 6 – Test & documentation edge-cases
 | `store_failures` file format | Delta table | Parquet (unless `file_format` overridden) | Delta table | Controls how failing-row tables are materialised |
 | Column comments via `persist_docs` | Works on Delta & Iceberg | Hive/Parquet metastore can lose column comments | Works on Delta (and Unity Catalog) | Column-level docs portability differs |
 
+
+
+____________________________________________________________________________________________
+
+
+h2. Model-level Configs – Spark / Glue / Databricks
+
+|| Config Key || Config Type || Adapter || Found in Docs || Found in GitHub || Notes ||
+| materialized | model (general) | Spark | Yes | Yes | Core materialization (table/view/incremental/ephemeral). |
+| materialized | model (general) | Glue | Yes | Yes | Inherits core behaviour. |
+| materialized | model (general) | Databricks | Yes | Yes | Same as Spark. |
+| schema | model (general) | Spark | Yes | Yes | Maps to Hive DB. |
+| schema | model (general) | Glue | Yes | Yes | Glue database. |
+| schema | model (general) | Databricks | Yes | Yes | Unity-Catalog schema. |
+| database | model (general) | Spark | Yes | Yes | Alias of schema. |
+| database | model (general) | Glue | – | No | Not used. |
+| database (catalog) | model (general) | Databricks | (profile level) | Yes | Set via profile `catalog`. |
+| alias | model (general) | Spark | Yes | Yes | Custom relation name. |
+| alias | model (general) | Glue | Yes | Yes | – |
+| alias | model (general) | Databricks | Yes | Yes | – |
+| enabled | model (general) | Spark | Yes | Yes | Toggle resource. |
+| enabled | model (general) | Glue | Yes | Yes | – |
+| enabled | model (general) | Databricks | Yes | Yes | – |
+| tags | model (general) | Spark | Yes | Yes | List of tags. |
+| tags | model (general) | Glue | Yes | Yes | – |
+| tags | model (general) | Databricks | Yes | Yes | – |
+| meta | model (general) | Spark | Yes | Yes | Arbitrary key/val. |
+| meta | model (general) | Glue | Yes | Yes | – |
+| meta | model (general) | Databricks | Yes | Yes | – |
+| persist_docs | model (general) | Spark | Yes | Yes | Table & col comments. |
+| persist_docs | model (general) | Glue | No | No | Not implemented. |
+| persist_docs | model (general) | Databricks | Yes | Yes | Needs Delta for col comments. |
+| pre-hook / post-hook | model | Spark | Yes | Yes | SQL hooks. |
+| pre-hook / post-hook | model | Glue | Yes | Yes | – |
+| pre-hook / post-hook | model | Databricks | Yes | Yes | – |
+| grants | model | Spark | Yes | No | Not supported (no grant engine). |
+| grants | model | Glue | Yes | No | Same limitation. |
+| grants | model | Databricks | Yes | Partial | Unity-Catalog WIP. |
+| unique_key | incremental | Spark | Yes | Yes | Needed for merge. |
+| unique_key | incremental | Glue | Yes | Yes | Hudi merge only. |
+| unique_key | incremental | Databricks | Yes | Yes | Delta merge. |
+| incremental_strategy | incremental | Spark | Yes | Yes | append / insert_overwrite / merge / microbatch. |
+| incremental_strategy | incremental | Glue | Yes | Yes | append / insert_overwrite / merge(Hudi). |
+| incremental_strategy | incremental | Databricks | Yes | Yes | append / insert_overwrite / merge / replace_where. |
+| on_schema_change | incremental | Spark | Yes | Yes | ignore / fail / append_new_columns / sync_all_columns. |
+| on_schema_change | incremental | Glue | Yes | Yes | Supported v1.9+. |
+| on_schema_change | incremental | Databricks | Yes | Yes | – |
+| file_format | table/incremental | Spark | Yes | Yes | parquet (def), delta, iceberg, hudi … |
+| file_format | table/incremental | Glue | *Implicit* | Yes | Use hudi for merge. |
+| file_format | table/incremental | Databricks | Yes | Yes | Default delta. |
+| location_root | table | Spark | Yes | Yes | External path. |
+| location_root | table | Glue | – | No | Use `custom_location`. |
+| location_root | table | Databricks | – | Yes | Inherited; not documented. |
+| custom_location | table | Glue | Yes | Yes | S3 override. |
+| partition_by | table/inc | Spark | Yes | Yes | List of cols. |
+| partition_by | table/inc | Glue | Yes | Yes | – |
+| partition_by | table/inc | Databricks | Yes | Yes | – |
+| cluster_by / buckets | table | Spark | Yes | Yes | Bucketing. |
+| cluster_by / buckets | table | Glue | No | Yes | Works, undocumented. |
+| cluster_by / buckets | table | Databricks | No | Yes | Works; prefer Z-order. |
+| tblproperties | table | Spark | Yes | Yes | Key-value props. |
+| tblproperties | table | Glue | Implicit | Yes | Pass-through. |
+| tblproperties | table | Databricks | Yes | Yes | Delta props. |
+| databricks_compute | model | Databricks | Yes | Yes | Select alt compute. |
+| event_time | microbatch | Spark | Yes | Yes | Required for microbatch. |
+| event_time | microbatch | Glue | – | No | Microbatch not supported. |
+| event_time | microbatch | Databricks | Yes | Yes | – |
+| batch_size / lookback / begin | microbatch | Spark | Yes | Yes | Microbatch keys. |
+| batch_size / lookback / begin | microbatch | Databricks | Yes | Yes | – |
+| incremental_predicates | incremental | Databricks | Yes | Yes | replace_where strategy. |
+| full_refresh | model | Spark | Yes | Yes | Override CLI flag. |
+| full_refresh | model | Glue | Yes | Yes | – |
+| full_refresh | model | Databricks | Yes | Yes | – |
+
+
+h2. Seed Configs
+
+|| Config Key || Adapter || Found in Docs || Found in GitHub || Notes ||
+| quote_columns | Spark | Yes | Yes | Quote CSV seed column names. |
+| quote_columns | Glue | Yes | Yes | – |
+| quote_columns | Databricks | Yes | Yes | – |
+| column_types | Spark | Yes | Yes | Override data types. |
+| column_types | Glue | Yes | Yes | – |
+| column_types | Databricks | Yes | Yes | – |
+| delimiter | Spark | Yes | Yes | CSV delimiter. |
+| delimiter | Glue | Yes | Yes | – |
+| delimiter | Databricks | Yes | Yes | – |
+| seed_format | Glue | Yes | Yes | csv / parquet / json. |
+| seed_mode | Glue | Yes | Yes | overwrite / append. |
+
+
+h2. Snapshot Configs
+
+|| Config Key || Adapter || Found in Docs || Found in GitHub || Notes ||
+| strategy (timestamp / check) | Spark | Yes | Yes | Core strategies. |
+| strategy | Glue | Yes | Yes | – |
+| strategy | Databricks | Yes | Yes | – |
+| updated_at | Spark | Yes | Yes | For timestamp strategy. |
+| updated_at | Glue | Yes | Yes | – |
+| updated_at | Databricks | Yes | Yes | – |
+| unique_key | Spark | Yes | Yes | PK for snapshot. |
+| check_cols | Spark | Yes (legacy) | Yes | Deprecated. |
+| hard_deletes | Spark | Yes | Yes | v1.9+. |
+| invalidate_hard_deletes | Spark | Yes | Yes | – |
+| dbt_valid_to_current | Spark | Yes | Yes | v1.9+. |
+| snapshot_meta_column_names | Spark | Yes | Yes | v1.9+. |
+| snapshot_name | Spark | Yes | Yes | Custom table name. |
+| target_schema | Spark | Yes | Yes | Override schema. |
+| target_database | Spark | Yes | Yes | DB override (N/A for Glue). |
+
+
+
+h2. Source Configs
+
+|| Config Key || Adapter || Found in Docs || Found in GitHub || Notes ||
+| quoting | Spark | Yes | Yes | Control quoting. |
+| quoting | Glue | Yes | Yes | – |
+| quoting | Databricks | Yes | Yes | – |
+| loaded_at_field | Spark | Yes | Yes | Freshness check. |
+| freshness (warn_after / error_after) | Spark | Yes | Yes | – |
+| filter (freshness) | Spark | Yes | Yes | Optional filter. |
+| overrides | Spark | Yes | Yes | Source overrides. |
+| external | Spark | Yes | Yes | External tables (via packages). |
+
+
+h2. Test Configs
+
+|| Config Key || Adapter || Found in Docs || Found in GitHub || Notes ||
+| severity | all | Yes | Yes | error / warn. |
+| warn_if | all | Yes | Yes | Threshold expr. |
+| error_if | all | Yes | Yes | Threshold expr. |
+| fail_calc | all | Yes | Yes | Failure calc. |
+| limit | all | Yes | Yes | Row limit. |
+| store_failures | all | Yes | Yes | Save failures table. |
+| store_failures_as | all | Yes | Yes | Custom fail table. |
+| where | all | Yes | Yes | Extra filter. |
+
+
+h2. Profile (Connection) Configs – Spark
+
+|| Profile Key || Found in Docs || Found in GitHub || Notes ||
+| type (spark) | Yes | – | Selects adapter. |
+| method (session / thrift / http / odbc) | Yes | Yes | Connection transport. |
+| driver (odbc) | Yes | Yes | Path to driver. |
+| host | Yes | Yes | Thrift/HTTP host. |
+| port | Yes | Yes | Default 10001/443. |
+| user | Yes | Yes | Optional username. |
+| token | Yes | Yes | Databricks PAT. |
+| organization | Yes | Yes | Azure DBX only. |
+| cluster / endpoint | Yes | Yes | Databricks cluster / SQL WH. |
+| auth / kerberos_service_name | Yes | Yes | Thrift auth. |
+| use_ssl | Yes | Yes | Thrift SSL flag. |
+| connect_timeout / connect_retries | Yes | Yes | HTTP retry knobs. |
+| server_side_parameters | Yes | Yes | Spark conf overrides. |
+
+
+h2. Profile (Connection) Configs – Glue
+
+|| Profile Key || Found in Docs || Found in GitHub || Notes ||
+| type (glue) | Yes | – | Select adapter. |
+| role_arn | Yes | Yes | IAM role for session. |
+| region | Yes | Yes | AWS region. |
+| schema | Yes | Yes | Glue database. |
+| workers | Yes | Yes | Worker count. |
+| worker_type | Yes | Yes | G.1X / G.2X. |
+| idle_timeout | Yes | Yes | Idle mins. |
+| session_provisioning_timeout_in_seconds | Yes | Yes | Session startup timeout. |
+| query_timeout_in_minutes | Yes | Yes | Query timeout. |
+| glue_version | Yes | Yes | 3.0 / 4.0. |
+| security_configuration | Yes | Yes | Glue encryption config. |
+| connections | Yes | Yes | Glue connections list. |
+| conf | Yes | Yes | Spark --conf overrides. |
+| extra_py_files | Yes | Yes | Extra Python libs. |
+| extra_jars | Yes | Yes | Extra JARs. |
+| delta_athena_prefix | Yes | Yes | Athena mirror tables. |
+| tags | Yes | Yes | AWS resource tags. |
+| location | Yes | Yes | Warehouse S3 path. |
+| query-comment | Yes | Yes | Prepend SQL comment. |
+| project_name | Yes | Yes | Must match dbt project. |
+
+
+h2. Profile (Connection) Configs – Databricks
+
+|| Profile Key || Found in Docs || Found in GitHub || Notes ||
+| type (databricks) | Yes | – | Select adapter. |
+| catalog | Yes | Yes | Unity-Catalog name (opt). |
+| schema | Yes | Yes | Required schema. |
+| host | Yes | Yes | Workspace host. |
+| http_path | Yes | Yes | SQL WH / cluster endpoint. |
+| token | Yes | Yes | PAT (default auth). |
+| auth_type | Yes | Yes | `oauth` or omit for PAT. |
+| client_id / client_secret | Yes | Yes | OAuth creds. |
+| threads | Yes | Yes | Parallel threads. |
+| connect_retries / connect_timeout | Yes | Yes | Connection retries. |
+| compute (profile block) | Yes | Yes | Named alt compute targets. |
+
+
+
+
